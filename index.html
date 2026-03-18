@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SONIFICACIÓN VISUAL — OT-021.S1</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #0f0f1a;
+    --border: #1e1e2e;
+    --accent: #c8a96e;
+    --accent2: #6e8fc8;
+    --accent3: #c86e8f;
+    --text: #e8e4d8;
+    --muted: #6b6760;
+    --phi: 1.618033988749895;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: baseline;
+    gap: 2rem;
+  }
+
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  .module-id {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    margin-left: auto;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 1px;
+    background: var(--border);
+    min-height: calc(100vh - 80px);
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 2.5rem;
+    position: relative;
+  }
+
+  .panel-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* DROP ZONE */
+  #dropZone {
+    border: 1px dashed var(--border);
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  #dropZone:hover, #dropZone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,169,110,0.04);
+  }
+
+  #dropZone .drop-icon {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.5rem;
+    font-style: italic;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+
+  #dropZone .drop-text {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  #dropZone .drop-sub {
+    font-size: 0.6rem;
+    color: var(--border);
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+
+  #previewImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+    display: none;
+  }
+
+  #canvas { display: none; }
+
+  /* METRICS PANEL */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 1px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    padding: 1.2rem 1.5rem;
+  }
+
+  .metric-name {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .metric-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .metric-value.accent { color: var(--accent); }
+  .metric-value.accent2 { color: var(--accent2); }
+  .metric-value.accent3 { color: var(--accent3); }
+
+  .metric-unit {
+    font-size: 0.55rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* COLOR SWATCH */
+  .color-row {
+    display: flex;
+    gap: 1px;
+    height: 40px;
+    margin-bottom: 1.5rem;
+    background: var(--border);
+  }
+
+  .color-swatch {
+    flex: 1;
+    position: relative;
+    transition: flex 0.5s ease;
+  }
+
+  .color-swatch .swatch-label {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    font-size: 0.5rem;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.1em;
+  }
+
+  /* PHI DISPLAY */
+  .phi-bar {
+    background: var(--surface);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .phi-symbol {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    color: var(--accent);
+    font-style: italic;
+    line-height: 1;
+  }
+
+  .phi-data { flex: 1; }
+
+  .phi-score-bar {
+    height: 2px;
+    background: var(--border);
+    margin-top: 0.8rem;
+    position: relative;
+  }
+
+  .phi-score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+    width: 0%;
+    transition: width 1s ease;
+  }
+
+  /* FREQUENCY VISUALIZATION */
+  #freqCanvas {
+    width: 100%;
+    height: 120px;
+    display: block;
+    background: var(--surface);
+  }
+
+  /* MUSIC CONTROLS */
+  .controls {
+    grid-column: 1 / -1;
+    background: var(--bg);
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.8rem 2rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: -1;
+  }
+
+  .btn:hover {
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .btn:hover::before { transform: translateX(0); }
+
+  .btn.btn-primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .btn:disabled:hover { color: var(--text); }
+  .btn:disabled:hover::before { transform: translateX(-100%); }
+
+  /* WAVEFORM */
+  #waveCanvas {
+    flex: 1;
+    height: 50px;
+    background: var(--surface);
+  }
+
+  /* PARAMETER SLIDERS */
+  .params {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .param {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .param label {
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .param label span {
+    color: var(--accent);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.75rem;
+    font-style: italic;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    cursor: pointer;
+    border-radius: 0;
+  }
+
+  /* LOG */
+  .analysis-log {
+    font-size: 0.6rem;
+    color: var(--muted);
+    line-height: 2;
+    letter-spacing: 0.05em;
+    font-style: italic;
+  }
+
+  .log-entry { animation: fadeIn 0.3s ease; }
+  .log-entry.highlight { color: var(--accent); }
+  .log-entry.info { color: var(--accent2); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* SPIRAL OVERLAY */
+  .spiral-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .spiral-overlay.show { opacity: 0.3; }
+
+  /* PLAYING INDICATOR */
+  .playing-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1s ease infinite;
+    margin-right: 0.5rem;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.5); }
+  }
+
+  .status-bar {
+    font-size: 0.6rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .controls { flex-wrap: wrap; }
+    header { padding: 1.5rem; flex-wrap: wrap; gap: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Sonificación Visual</div>
+    <div class="module-id">OT-021.S1 — Armonía Visual / Sonora — v2.0 científica</div>
+  </div>
+  <div class="header-right">
+    φ = 1.618033...<br>
+    FFT · Psicoacústica · Proporción Áurea
+  </div>
+</header>
+
+<main>
+  <!-- PANEL IZQUIERDO: Imagen -->
+  <div class="panel">
+    <div class="panel-label">01 — Entrada visual</div>
+    
+    <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-icon">⊕</div>
+      <div class="drop-text">Arrastra una imagen o haz clic</div>
+      <div class="drop-sub">JPG · PNG · WEBP · GIF</div>
+      <img id="previewImg" alt="preview" />
+      <canvas id="spiralCanvas" class="spiral-overlay"></canvas>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <canvas id="canvas" style="display:none"></canvas>
+
+    <div class="params">
+      <div class="param">
+        <label>Duración <span id="durVal">12s</span></label>
+        <input type="range" id="duration" min="5" max="60" value="12">
+      </div>
+      <div class="param">
+        <label>Densidad armónica <span id="harmVal">4</span></label>
+        <input type="range" id="harmonics" min="1" max="8" value="4">
+      </div>
+      <div class="param">
+        <label>Reverb <span id="reverbVal">0.4</span></label>
+        <input type="range" id="reverbAmount" min="0" max="1" step="0.05" value="0.4">
+      </div>
+      <div class="param">
+        <label>Octava base <span id="octaveVal">4</span></label>
+        <input type="range" id="octave" min="2" max="6" value="4">
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO: Análisis -->
+  <div class="panel">
+    <div class="panel-label">02 — Análisis científico</div>
+
+    <div class="color-row" id="colorRow">
+      <div class="color-swatch" style="background:#1e1e2e"><span class="swatch-label">—</span></div>
+    </div>
+
+    <div class="metrics-grid" id="metricsGrid">
+      <div class="metric-card">
+        <div class="metric-name">Frecuencia dominante</div>
+        <div class="metric-value accent" id="mFreq">—</div>
+        <div class="metric-unit">Hz (escalada)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">Temp. de color</div>
+        <div class="metric-value accent2" id="mTemp">—</div>
+        <div class="metric-unit">Kelvin (aprox.)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">Entropía visual</div>
+        <div class="metric-value" id="mEntropy">—</div>
+        <div class="metric-unit">bits (≈ complejidad)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">Índice Φ</div>
+        <div class="metric-value accent3" id="mPhi">—</div>
+        <div class="metric-unit">proporción áurea</div>
+      </div>
+    </div>
+
+    <div class="phi-bar" id="phiBar" style="display:none">
+      <div class="phi-symbol">φ</div>
+      <div class="phi-data">
+        <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.1em" id="phiText">—</div>
+        <div class="phi-score-bar">
+          <div class="phi-score-fill" id="phiFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-label" style="margin-top:1rem">Espectro de frecuencias espaciales</div>
+    <canvas id="freqCanvas" height="120"></canvas>
+
+    <div style="margin-top:1.5rem">
+      <div class="panel-label">Log de análisis</div>
+      <div class="analysis-log" id="log">
+        <div class="log-entry">Esperando imagen...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL INFERIOR: Controles -->
+  <div class="controls">
+    <button class="btn btn-primary" id="playBtn" disabled>▶ REPRODUCIR</button>
+    <button class="btn" id="stopBtn" disabled>■ DETENER</button>
+    <button class="btn" id="exportBtn" disabled>⬇ EXPORTAR WAV</button>
+    
+    <canvas id="waveCanvas" width="300" height="50"></canvas>
+    
+    <div class="status-bar" id="statusBar">
+      <span>Sin imagen cargada</span>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================================
+// MOTOR DE SONIFICACIÓN CIENTÍFICA — OT-021.S1
+// Basado en física real, psicoacústica y proporción áurea
+// ============================================================
+
+const PHI = 1.618033988749895;
+const FIBONACCI = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+
+let audioCtx = null;
+let analysisData = null;
+let isPlaying = false;
+let activeSources = [];
+let analyserNode = null;
+let animFrame = null;
+let exportInProgress = false;
+
+// --- UI ELEMENTS ---
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const previewImg = document.getElementById('previewImg');
+const canvas = document.getElementById('canvas');
+const ctx2d = canvas.getContext('2d');
+const freqCanvas = document.getElementById('freqCanvas');
+const freqCtx = freqCanvas.getContext('2d');
+const waveCanvas = document.getElementById('waveCanvas');
+const waveCtx = waveCanvas.getContext('2d');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const exportBtn = document.getElementById('exportBtn');
+
+// --- DRAG & DROP ---
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+// --- SLIDERS ---
+const sliders = [
+  ['duration', 'durVal', v => v + 's'],
+  ['harmonics', 'harmVal', v => v],
+  ['reverbAmount', 'reverbVal', v => parseFloat(v).toFixed(2)],
+  ['octave', 'octaveVal', v => v],
+];
+sliders.forEach(([id, labelId, fmt]) => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    document.getElementById(labelId).textContent = fmt(el.value);
+  });
+});
+
+// ============================================================
+// PROCESAMIENTO DE IMAGEN
+// ============================================================
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => processImage(img);
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function processImage(img) {
+  previewImg.src = img.src;
+  previewImg.style.display = 'block';
+  dropZone.querySelector('.drop-icon').style.display = 'none';
+  dropZone.querySelector('.drop-text').style.display = 'none';
+  dropZone.querySelector('.drop-sub').style.display = 'none';
+
+  // Resize para análisis
+  const W = 256, H = 256;
+  canvas.width = W; canvas.height = H;
+  ctx2d.drawImage(img, 0, 0, W, H);
+  const imageData = ctx2d.getImageData(0, 0, W, H);
+  const pixels = imageData.data;
+
+  log('Analizando imagen ' + img.naturalWidth + '×' + img.naturalHeight + 'px...');
+
+  // 1. COLOR DOMINANTE → frecuencia
+  const colorAnalysis = analyzeColor(pixels, W, H);
+  // 2. TEMPERATURA DE COLOR
+  const colorTemp = estimateColorTemp(colorAnalysis.avgR, colorAnalysis.avgG, colorAnalysis.avgB);
+  // 3. ENTROPÍA VISUAL
+  const entropy = computeEntropy(pixels);
+  // 4. BRILLO Y CONTRASTE
+  const {brightness, contrast} = computeBrightness(pixels);
+  // 5. PROPORCIÓN ÁUREA
+  const phiScore = analyzeGoldenRatio(img.naturalWidth, img.naturalHeight, pixels, W, H);
+  // 6. FRECUENCIAS ESPACIALES (aprox.)
+  const spatialFreqs = analyzeSpatialFrequencies(pixels, W, H);
+  // 7. MODO MUSICAL (mayor/menor por temp. color)
+  const mode = colorTemp > 5000 ? 'mayor' : 'menor';
+  // 8. TEMPO basado en entropía
+  const bpm = Math.round(60 + entropy * 80); // 60–140 BPM
+  // 9. FRECUENCIA BASE desde color dominante
+  const baseFreq = colorToFrequency(colorAnalysis.avgR, colorAnalysis.avgG, colorAnalysis.avgB);
+
+  analysisData = {
+    colorAnalysis, colorTemp, entropy, brightness, contrast,
+    phiScore, spatialFreqs, mode, bpm, baseFreq,
+    palette: colorAnalysis.palette,
+    width: img.naturalWidth, height: img.naturalHeight
+  };
+
+  updateUI(analysisData);
+  drawSpatialSpectrum(spatialFreqs);
+  drawPhiSpiral(document.getElementById('spiralCanvas'), img.naturalWidth, img.naturalHeight, phiScore);
+
+  playBtn.disabled = false;
+  exportBtn.disabled = false;
+  log('Análisis completado.', 'highlight');
+}
+
+// ---- ANÁLISIS DE COLOR ----
+function analyzeColor(pixels, W, H) {
+  let r = 0, g = 0, b = 0;
+  const buckets = 16;
+  const hist = new Array(buckets * 3).fill(0);
+  
+  for (let i = 0; i < pixels.length; i += 4) {
+    const pr = pixels[i], pg = pixels[i+1], pb = pixels[i+2];
+    r += pr; g += pg; b += pb;
+    hist[Math.floor(pr / 256 * buckets)]++;
+    hist[buckets + Math.floor(pg / 256 * buckets)]++;
+    hist[2*buckets + Math.floor(pb / 256 * buckets)]++;
+  }
+  
+  const n = pixels.length / 4;
+  const avgR = r / n, avgG = g / n, avgB = b / n;
+
+  // Paleta de 6 colores dominantes por clusterización simple
+  const palette = extractPalette(pixels, 6);
+
+  return { avgR, avgG, avgB, palette };
+}
+
+function extractPalette(pixels, k) {
+  const step = Math.floor(pixels.length / (4 * 64));
+  const samples = [];
+  for (let i = 0; i < pixels.length; i += 4 * step) {
+    samples.push([pixels[i], pixels[i+1], pixels[i+2]]);
+  }
+  // K-means simplificado (1 iteración)
+  const centers = [];
+  for (let i = 0; i < k; i++) {
+    centers.push(samples[Math.floor(i * samples.length / k)].slice());
+  }
+  // Asignar y recalcular centros
+  for (let iter = 0; iter < 5; iter++) {
+    const sums = Array.from({length: k}, () => [0, 0, 0, 0]);
+    for (const s of samples) {
+      let best = 0, bestD = Infinity;
+      for (let c = 0; c < k; c++) {
+        const d = (s[0]-centers[c][0])**2 + (s[1]-centers[c][1])**2 + (s[2]-centers[c][2])**2;
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      sums[best][0] += s[0]; sums[best][1] += s[1]; sums[best][2] += s[2]; sums[best][3]++;
+    }
+    for (let c = 0; c < k; c++) {
+      if (sums[c][3] > 0) {
+        centers[c] = [sums[c][0]/sums[c][3], sums[c][1]/sums[c][3], sums[c][2]/sums[c][3]];
+      }
+    }
+  }
+  return centers.map(c => c.map(Math.round));
+}
+
+// ---- COLOR → FRECUENCIA AUDIBLE ----
+// Física real: luz visible ~430-750 THz, escalada a 200-2000 Hz
+function colorToFrequency(r, g, b) {
+  // Longitud de onda dominante aproximada por color
+  // Rojo: ~700nm (~430 THz), Verde: ~550nm (~545 THz), Azul: ~450nm (~667 THz)
+  const dominantWavelength = (r * 700 + g * 550 + b * 450) / (r + g + b + 0.001);
+  // Rango visible: 380-780nm → mapear a 200-2000 Hz (log)
+  const normalized = (dominantWavelength - 380) / (780 - 380);
+  const freq = 200 * Math.pow(10, normalized * Math.log10(2000/200));
+  return Math.round(freq);
+}
+
+// ---- TEMPERATURA DE COLOR (Kelvin aproximado) ----
+function estimateColorTemp(r, g, b) {
+  // McCamy's formula aproximación
+  const X = -0.14282 * r + 1.54924 * g - 0.95641 * b;
+  const Y = -0.32466 * r + 1.57837 * g - 0.73191 * b;
+  const Z =  0.73717 * r + 0.27418 * g + 0.18693 * b;
+  const x = X / (X + Y + Z + 0.001);
+  const y = Y / (X + Y + Z + 0.001);
+  const n = (x - 0.3320) / (0.1858 - y);
+  const CCT = 449 * n**3 + 3525 * n**2 + 6823.3 * n + 5520.33;
+  return Math.max(1500, Math.min(15000, Math.round(CCT)));
+}
+
+// ---- ENTROPÍA DE SHANNON (complejidad visual) ----
+function computeEntropy(pixels) {
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < pixels.length; i += 4) {
+    const gray = Math.round(0.299*pixels[i] + 0.587*pixels[i+1] + 0.114*pixels[i+2]);
+    hist[gray]++;
+  }
+  const n = pixels.length / 4;
+  let entropy = 0;
+  for (const count of hist) {
+    if (count > 0) {
+      const p = count / n;
+      entropy -= p * Math.log2(p);
+    }
+  }
+  return entropy / 8; // normalizar 0-1
+}
+
+// ---- BRILLO Y CONTRASTE ----
+function computeBrightness(pixels) {
+  let sum = 0, sumSq = 0;
+  const n = pixels.length / 4;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const l = (0.299*pixels[i] + 0.587*pixels[i+1] + 0.114*pixels[i+2]) / 255;
+    sum += l; sumSq += l * l;
+  }
+  const brightness = sum / n;
+  const variance = sumSq / n - brightness * brightness;
+  const contrast = Math.sqrt(Math.max(0, variance));
+  return { brightness, contrast };
+}
+
+// ---- PROPORCIÓN ÁUREA ----
+function analyzeGoldenRatio(imgW, imgH, pixels, W, H) {
+  const ratio = imgW / imgH;
+  const phiDiff = Math.abs(ratio - PHI) / PHI;
+  const inversePhiDiff = Math.abs(ratio - 1/PHI) / (1/PHI);
+  const aspectScore = 1 - Math.min(1, Math.min(phiDiff, inversePhiDiff));
+
+  // Buscar regiones internas con proporción áurea usando bordes
+  const edgeScore = detectPhiInRegions(pixels, W, H);
+  
+  // Peso: 30% aspecto, 70% composición interna
+  return 0.3 * aspectScore + 0.7 * edgeScore;
+}
+
+function detectPhiInRegions(pixels, W, H) {
+  // Sobel edge detection simplificado
+  const gray = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      gray[y * W + x] = (0.299*pixels[i] + 0.587*pixels[i+1] + 0.114*pixels[i+2]) / 255;
+    }
+  }
+  
+  // Proyecciones horizontales y verticales
+  const hProj = new Float32Array(W).fill(0);
+  const vProj = new Float32Array(H).fill(0);
+  for (let y = 1; y < H-1; y++) {
+    for (let x = 1; x < W-1; x++) {
+      const gx = gray[(y)*W+(x+1)] - gray[(y)*W+(x-1)];
+      const gy = gray[(y+1)*W+(x)] - gray[(y-1)*W+(x)];
+      const mag = Math.sqrt(gx*gx + gy*gy);
+      hProj[x] += mag;
+      vProj[y] += mag;
+    }
+  }
+
+  // Encontrar centroide visual
+  let sumX = 0, sumXW = 0, sumY = 0, sumYW = 0;
+  for (let x = 0; x < W; x++) { sumXW += hProj[x]; sumX += x * hProj[x]; }
+  for (let y = 0; y < H; y++) { sumYW += vProj[y]; sumY += y * vProj[y]; }
+  const cx = sumX / (sumXW + 1e-6);
+  const cy = sumY / (sumYW + 1e-6);
+
+  // Punto áureo teórico: imagen dividida en φ
+  const goldenX = W / PHI;
+  const goldenY = H / PHI;
+  const dx = Math.abs(cx - goldenX) / W;
+  const dy = Math.abs(cy - goldenY) / H;
+  const score = 1 - Math.min(1, (dx + dy));
+  return score;
+}
+
+// ---- FRECUENCIAS ESPACIALES (aproximación por bloques) ----
+function analyzeSpatialFrequencies(pixels, W, H) {
+  // Dividir en 8 bandas de frecuencia espacial usando diferencias
+  const bands = 16;
+  const spectrum = new Float32Array(bands).fill(0);
+  
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / (3 * 255);
+      
+      // Convoluciones con patrones de diferentes frecuencias
+      for (let f = 0; f < bands; f++) {
+        const freq = (f + 1) * Math.PI / W;
+        const cos = Math.cos(freq * x) * Math.cos(freq * y);
+        spectrum[f] += Math.abs(gray * cos);
+      }
+    }
+  }
+  
+  // Normalizar
+  const maxVal = Math.max(...spectrum);
+  return Array.from(spectrum).map(v => v / (maxVal + 1e-6));
+}
+
+// ============================================================
+// UI UPDATE
+// ============================================================
+
+function updateUI(d) {
+  const toRgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+  
+  // Color swatches
+  const colorRow = document.getElementById('colorRow');
+  colorRow.innerHTML = d.palette.map((c, i) => 
+    `<div class="color-swatch" style="background:${toRgb(c)}"></div>`
+  ).join('');
+
+  // Métricas
+  document.getElementById('mFreq').textContent = d.baseFreq;
+  document.getElementById('mTemp').textContent = d.colorTemp.toLocaleString();
+  document.getElementById('mEntropy').textContent = (d.entropy * 8).toFixed(2);
+  document.getElementById('mPhi').textContent = d.phiScore.toFixed(3);
+
+  // Phi bar
+  const phiBar = document.getElementById('phiBar');
+  phiBar.style.display = 'flex';
+  const fill = document.getElementById('phiFill');
+  const text = document.getElementById('phiText');
+  
+  const pct = d.phiScore * 100;
+  fill.style.width = pct + '%';
+  
+  let phiDesc;
+  if (d.phiScore > 0.75) phiDesc = '✦ Alta resonancia con proporción áurea';
+  else if (d.phiScore > 0.5) phiDesc = '◇ Resonancia moderada con φ';
+  else if (d.phiScore > 0.25) phiDesc = '○ Baja resonancia con φ';
+  else phiDesc = '· Composición no-áurea';
+  text.textContent = phiDesc;
+
+  // Status
+  document.getElementById('statusBar').innerHTML = 
+    `${d.mode.toUpperCase()} · ${d.bpm} BPM · ${d.baseFreq} Hz base`;
+
+  // Log
+  log(`Color dominante: RGB(${Math.round(d.colorAnalysis.avgR)}, ${Math.round(d.colorAnalysis.avgG)}, ${Math.round(d.colorAnalysis.avgB)})`, 'info');
+  log(`Temperatura de color: ${d.colorTemp.toLocaleString()} K → modo ${d.mode}`, 'info');
+  log(`Entropía: ${(d.entropy*8).toFixed(3)} bits → ${d.bpm} BPM`, 'info');
+  log(`Proporción áurea: ${(d.phiScore*100).toFixed(1)}%`, d.phiScore > 0.6 ? 'highlight' : '');
+  log(`Frecuencia base: ${d.baseFreq} Hz (λ ~${Math.round(700 - (d.baseFreq - 200)/(2000-200)*320)}nm)`);
+}
+
+function log(msg, type = '') {
+  const logEl = document.getElementById('log');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.textContent = '> ' + msg;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ---- ESPECTRO DE FRECUENCIAS ESPACIALES ----
+function drawSpatialSpectrum(spectrum) {
+  const W = freqCanvas.offsetWidth || 400;
+  freqCanvas.width = W;
+  freqCtx.clearRect(0, 0, W, 120);
+  freqCtx.fillStyle = '#0f0f1a';
+  freqCtx.fillRect(0, 0, W, 120);
+
+  const barW = W / spectrum.length;
+  spectrum.forEach((val, i) => {
+    const h = val * 100;
+    const hue = 200 + i * 10;
+    // Gradiente por frecuencia (bajas = cálido, altas = frío)
+    const r = Math.round(200 - i * 8);
+    const g = Math.round(100 + i * 8);
+    const b = Math.round(50 + i * 12);
+    freqCtx.fillStyle = `rgb(${r},${g},${b})`;
+    freqCtx.fillRect(i * barW + 1, 120 - h, barW - 2, h);
+    
+    // Label frecuencia musical
+    if (i % 4 === 0) {
+      freqCtx.fillStyle = '#6b6760';
+      freqCtx.font = '8px Space Mono, monospace';
+      freqCtx.fillText(['L', 'ML', 'MH', 'H'][i/4] || '', i * barW + 2, 115);
+    }
+  });
+
+  // Eje
+  freqCtx.strokeStyle = '#1e1e2e';
+  freqCtx.beginPath();
+  freqCtx.moveTo(0, 119); freqCtx.lineTo(W, 119);
+  freqCtx.stroke();
+}
+
+// ---- ESPIRAL ÁUREA ----
+function drawPhiSpiral(spiralCanvas, imgW, imgH, phiScore) {
+  if (phiScore < 0.3) return;
+  spiralCanvas.width = dropZone.offsetWidth;
+  spiralCanvas.height = dropZone.offsetHeight;
+  const sc = spiralCanvas.getContext('2d');
+  
+  sc.strokeStyle = `rgba(200,169,110,${phiScore * 0.5})`;
+  sc.lineWidth = 1;
+  
+  const W = spiralCanvas.width, H = spiralCanvas.height;
+  sc.beginPath();
+  let a = 0, r = 0;
+  const step = 0.05;
+  const scale = Math.min(W, H) * 0.4;
+  const cx = W * 0.5, cy = H * 0.5;
+  
+  for (let t = 0; t < 4 * Math.PI; t += step) {
+    r = Math.exp(t * Math.log(PHI) / (Math.PI/2)) * 3;
+    const x = cx + r * Math.cos(t);
+    const y = cy + r * Math.sin(t);
+    if (r < scale) {
+      if (t === 0) sc.moveTo(x, y); else sc.lineTo(x, y);
+    }
+  }
+  sc.stroke();
+  spiralCanvas.classList.add('show');
+}
+
+// ============================================================
+// MOTOR DE AUDIO — SÍNTESIS CIENTÍFICA
+// ============================================================
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// Escala musical según modo (física: temperamento igual, A=440)
+function getScale(baseFreq, mode, octave) {
+  const A4 = 440;
+  const octaveOffset = parseInt(octave) - 4;
+  const base = A4 * Math.pow(2, octaveOffset);
+  
+  // Intervalos semitono en modo mayor y menor
+  const majorIntervals = [0, 2, 4, 5, 7, 9, 11, 12];
+  const minorIntervals = [0, 2, 3, 5, 7, 8, 10, 12];
+  const intervals = mode === 'mayor' ? majorIntervals : minorIntervals;
+  
+  // Encontrar la nota más cercana a baseFreq en la escala
+  const notes = intervals.map(i => base * Math.pow(2, i/12));
+  
+  // Usar Fibonacci para secuencia melódica
+  return FIBONACCI.slice(0, 8).map(f => notes[f % notes.length]);
+}
+
+async function startPlayback() {
+  if (!analysisData) return;
+  stopPlayback();
+  initAudio();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
+  
+  isPlaying = true;
+  playBtn.classList.add('active');
+  playBtn.textContent = '⏸ PAUSAR';
+  stopBtn.disabled = false;
+
+  const d = analysisData;
+  const numHarmonics = parseInt(document.getElementById('harmonics').value);
+  const reverbAmt = parseFloat(document.getElementById('reverbAmount').value);
+  const octave = document.getElementById('octave').value;
+  const duration = parseInt(document.getElementById('duration').value);
+  const now = audioCtx.currentTime;
+
+  // Maestro gain
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0.8, now);
+
+  // Reverb convolution (IR sintético)
+  const reverbNode = await createReverb(audioCtx, reverbAmt * 4);
+  const dryGain = audioCtx.createGain();
+  const wetGain = audioCtx.createGain();
+  dryGain.gain.value = 1 - reverbAmt * 0.5;
+  wetGain.gain.value = reverbAmt * 0.7;
+
+  // Analyser para visualización
+  analyserNode = audioCtx.createAnalyser();
+  analyserNode.fftSize = 2048;
+  
+  masterGain.connect(dryGain); dryGain.connect(analyserNode);
+  masterGain.connect(reverbNode); reverbNode.connect(wetGain); wetGain.connect(analyserNode);
+  analyserNode.connect(audioCtx.destination);
+  activeSources.push(masterGain);
+
+  const scale = getScale(d.baseFreq, d.mode, octave);
+
+  // ---- CAPA 1: Drone fundamental ----
+  // Frecuencia basada en color dominante, mapeo físico a rango audible
+  const fundamentalFreq = clampFreq(d.baseFreq);
+  log(`Drone fundamental: ${fundamentalFreq} Hz`);
+  
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.setValueAtTime(0.15, now);
+  droneGain.gain.linearRampToValueAtTime(0.2, now + 2);
+  droneGain.gain.linearRampToValueAtTime(0.1, now + duration - 1);
+  droneGain.gain.linearRampToValueAtTime(0, now + duration);
+  droneGain.connect(masterGain);
+
+  for (let h = 1; h <= numHarmonics; h++) {
+    // Armónicos naturales de la serie armónica
+    const osc = audioCtx.createOscillator();
+    const hGain = audioCtx.createGain();
+    osc.type = h === 1 ? 'sine' : (h <= 3 ? 'triangle' : 'sawtooth');
+    osc.frequency.value = fundamentalFreq * h;
+    // Amplitud inversamente proporcional al número de armónico
+    hGain.gain.value = (d.contrast * 0.3 + 0.1) / (h * h * 0.5 + 0.5);
+    // Modulación de frecuencia basada en entropía (vibrato)
+    if (d.entropy > 0.5 && h === 1) {
+      const lfo = audioCtx.createOscillator();
+      const lfoGain = audioCtx.createGain();
+      lfo.frequency.value = 4 + d.entropy * 2;
+      lfoGain.gain.value = fundamentalFreq * 0.003 * d.entropy;
+      lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+      lfo.start(now); lfo.stop(now + duration);
+      activeSources.push(lfo);
+    }
+    osc.connect(hGain); hGain.connect(droneGain);
+    osc.start(now); osc.stop(now + duration);
+    activeSources.push(osc);
+  }
+
+  // ---- CAPA 2: Melodía de Fibonacci ----
+  const beatDuration = 60 / d.bpm;
+  const noteDurations = FIBONACCI.slice(0, 13).map(f => f * beatDuration * 0.1 + 0.1);
+  
+  let t = now + 0.5;
+  let noteIdx = 0;
+  const melGain = audioCtx.createGain();
+  melGain.gain.value = 0.25 * d.brightness;
+  melGain.connect(masterGain);
+
+  while (t < now + duration - 0.5) {
+    const freq = scale[noteIdx % scale.length];
+    const noteDur = Math.min(noteDurations[noteIdx % noteDurations.length], 1.2);
+    
+    const noteOsc = audioCtx.createOscillator();
+    const noteEnv = audioCtx.createGain();
+    noteOsc.type = d.mode === 'mayor' ? 'triangle' : 'sawtooth';
+    noteOsc.frequency.value = freq;
+    // Envelope ADSR físico
+    noteEnv.gain.setValueAtTime(0, t);
+    noteEnv.gain.linearRampToValueAtTime(0.3, t + 0.02);
+    noteEnv.gain.exponentialRampToValueAtTime(0.15, t + noteDur * 0.3);
+    noteEnv.gain.exponentialRampToValueAtTime(0.001, t + noteDur);
+    
+    noteOsc.connect(noteEnv); noteEnv.connect(melGain);
+    noteOsc.start(t); noteOsc.stop(t + noteDur + 0.1);
+    activeSources.push(noteOsc);
+
+    t += noteDur * PHI / (1 + d.entropy); // Ritmo modulado por entropía
+    noteIdx++;
+    if (t > now + duration - 0.5) break;
+  }
+
+  // ---- CAPA 3: Textura de frecuencias espaciales ----
+  // Las frecuencias espaciales dominantes modulan filtros
+  const spatialGain = audioCtx.createGain();
+  spatialGain.gain.value = 0.1 * d.entropy;
+  spatialGain.connect(masterGain);
+
+  const noiseBuffer = createNoiseBuffer(audioCtx, duration);
+  const noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+  noiseSource.loop = true;
+
+  // Bandpass filter por frecuencias espaciales dominantes
+  const dominantBand = d.spatialFreqs.indexOf(Math.max(...d.spatialFreqs));
+  const filterFreq = 200 + dominantBand * 120; // Hz
+  
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = filterFreq;
+  filter.Q.value = 8 + d.contrast * 20;
+  
+  noiseSource.connect(filter); filter.connect(spatialGain);
+  noiseSource.start(now); noiseSource.stop(now + duration);
+  activeSources.push(noiseSource);
+
+  // ---- CAPA 4: Activación 528 Hz si φ alto ----
+  if (d.phiScore > 0.6) {
+    log('↑ Φ alto detectado — añadiendo resonancia áurea (528 Hz)', 'highlight');
+    const phiOsc = audioCtx.createOscillator();
+    const phiGain = audioCtx.createGain();
+    const phiEnv = audioCtx.createGain();
+    phiOsc.frequency.value = 528;
+    phiOsc.type = 'sine';
+    // 528 Hz es la frecuencia del Mi en 432 Hz tuning, psicoacústicamente agradable
+    phiGain.gain.value = 0.08 * d.phiScore;
+    phiEnv.gain.setValueAtTime(0, now);
+    phiEnv.gain.linearRampToValueAtTime(1, now + 3);
+    phiEnv.gain.linearRampToValueAtTime(0, now + duration);
+    
+    // Armónico a φ × 528
+    const phiOsc2 = audioCtx.createOscillator();
+    phiOsc2.frequency.value = 528 * PHI;
+    phiOsc2.type = 'sine';
+    
+    phiOsc.connect(phiGain); phiOsc2.connect(phiGain); 
+    phiGain.connect(phiEnv); phiEnv.connect(masterGain);
+    phiOsc.start(now); phiOsc.stop(now + duration);
+    phiOsc2.start(now); phiOsc2.stop(now + duration);
+    activeSources.push(phiOsc, phiOsc2);
+  }
+
+  // Auto-stop
+  setTimeout(() => { if (isPlaying) stopPlayback(); }, duration * 1000 + 200);
+
+  // Visualización de waveform
+  drawWaveform();
+  log(`Reproduciendo: ${d.mode} ${d.bpm} BPM, ${duration}s`, 'highlight');
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  activeSources.forEach(s => { try { s.stop(); s.disconnect(); } catch(e) {} });
+  activeSources = [];
+  if (animFrame) cancelAnimationFrame(animFrame);
+  playBtn.classList.remove('active');
+  playBtn.textContent = '▶ REPRODUCIR';
+  stopBtn.disabled = true;
+  clearWaveform();
+}
+
+function clampFreq(f) {
+  // Mapear a rango musical cómodo (55-880 Hz)
+  while (f > 880) f /= 2;
+  while (f < 55) f *= 2;
+  return f;
+}
+
+async function createReverb(actx, duration) {
+  const length = actx.sampleRate * duration;
+  const impulse = actx.createBuffer(2, length, actx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const data = impulse.getChannelData(c);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+    }
+  }
+  const conv = actx.createConvolver();
+  conv.buffer = impulse;
+  return conv;
+}
+
+function createNoiseBuffer(actx, duration) {
+  const len = actx.sampleRate * duration;
+  const buf = actx.createBuffer(1, len, actx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function drawWaveform() {
+  if (!isPlaying || !analyserNode) return;
+  const buf = new Uint8Array(analyserNode.fftSize);
+  analyserNode.getByteTimeDomainData(buf);
+  
+  const W = waveCanvas.width, H = waveCanvas.height;
+  waveCtx.clearRect(0, 0, W, H);
+  waveCtx.fillStyle = '#0f0f1a';
+  waveCtx.fillRect(0, 0, W, H);
+  
+  waveCtx.strokeStyle = '#c8a96e';
+  waveCtx.lineWidth = 1;
+  waveCtx.beginPath();
+  const sl = buf.length / W;
+  for (let x = 0; x < W; x++) {
+    const v = buf[Math.floor(x * sl)] / 128.0;
+    const y = v * H / 2;
+    x === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+  }
+  waveCtx.stroke();
+  animFrame = requestAnimationFrame(drawWaveform);
+}
+
+function clearWaveform() {
+  waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+  waveCtx.fillStyle = '#0f0f1a';
+  waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+}
+
+// ============================================================
+// EXPORTAR A WAV
+// ============================================================
+
+async function exportWav() {
+  if (!analysisData || exportInProgress) return;
+  exportInProgress = true;
+  exportBtn.textContent = '⏳ RENDERIZANDO...';
+  exportBtn.disabled = true;
+
+  const d = analysisData;
+  const duration = parseInt(document.getElementById('duration').value);
+  const sampleRate = 44100;
+  const offlineCtx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
+
+  // Re-crear todo el grafo en offline context
+  const masterGain = offlineCtx.createGain();
+  masterGain.gain.value = 0.8;
+  masterGain.connect(offlineCtx.destination);
+
+  const numHarmonics = parseInt(document.getElementById('harmonics').value);
+  const octave = document.getElementById('octave').value;
+  const reverbAmt = parseFloat(document.getElementById('reverbAmount').value);
+  const now = 0;
+
+  const reverbNode = await createReverb(offlineCtx, reverbAmt * 4);
+  const dryGain = offlineCtx.createGain();
+  const wetGain = offlineCtx.createGain();
+  dryGain.gain.value = 1 - reverbAmt * 0.5;
+  wetGain.gain.value = reverbAmt * 0.7;
+  masterGain.connect(dryGain); dryGain.connect(offlineCtx.destination);
+  masterGain.connect(reverbNode); reverbNode.connect(wetGain); wetGain.connect(offlineCtx.destination);
+
+  const scale = getScale(d.baseFreq, d.mode, octave);
+  const fundamentalFreq = clampFreq(d.baseFreq);
+
+  // Drone
+  const droneGain = offlineCtx.createGain();
+  droneGain.gain.setValueAtTime(0.15, now);
+  droneGain.gain.linearRampToValueAtTime(0.2, now + 2);
+  droneGain.gain.linearRampToValueAtTime(0, now + duration);
+  droneGain.connect(masterGain);
+
+  for (let h = 1; h <= numHarmonics; h++) {
+    const osc = offlineCtx.createOscillator();
+    const hGain = offlineCtx.createGain();
+    osc.type = h === 1 ? 'sine' : (h <= 3 ? 'triangle' : 'sawtooth');
+    osc.frequency.value = fundamentalFreq * h;
+    hGain.gain.value = (d.contrast * 0.3 + 0.1) / (h * h * 0.5 + 0.5);
+    osc.connect(hGain); hGain.connect(droneGain);
+    osc.start(now); osc.stop(duration);
+  }
+
+  // Melodía
+  const melGain = offlineCtx.createGain();
+  melGain.gain.value = 0.25 * d.brightness;
+  melGain.connect(masterGain);
+  const beatDuration = 60 / d.bpm;
+  const noteDurations = FIBONACCI.slice(0, 13).map(f => f * beatDuration * 0.1 + 0.1);
+  let t = 0.5, noteIdx = 0;
+  while (t < duration - 0.5) {
+    const freq = scale[noteIdx % scale.length];
+    const noteDur = Math.min(noteDurations[noteIdx % noteDurations.length], 1.2);
+    const noteOsc = offlineCtx.createOscillator();
+    const noteEnv = offlineCtx.createGain();
+    noteOsc.type = d.mode === 'mayor' ? 'triangle' : 'sawtooth';
+    noteOsc.frequency.value = freq;
+    noteEnv.gain.setValueAtTime(0, t);
+    noteEnv.gain.linearRampToValueAtTime(0.3, t + 0.02);
+    noteEnv.gain.exponentialRampToValueAtTime(0.15, t + noteDur * 0.3);
+    noteEnv.gain.exponentialRampToValueAtTime(0.001, t + noteDur);
+    noteOsc.connect(noteEnv); noteEnv.connect(melGain);
+    noteOsc.start(t); noteOsc.stop(t + noteDur + 0.1);
+    t += noteDur * PHI / (1 + d.entropy);
+    noteIdx++;
+  }
+
+  // Textura espacial
+  const spatialGain = offlineCtx.createGain();
+  spatialGain.gain.value = 0.1 * d.entropy;
+  spatialGain.connect(masterGain);
+  const noiseBuffer = createNoiseBuffer(offlineCtx, duration);
+  const noiseSource = offlineCtx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+  const dominantBand = d.spatialFreqs.indexOf(Math.max(...d.spatialFreqs));
+  const filter = offlineCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 200 + dominantBand * 120;
+  filter.Q.value = 8 + d.contrast * 20;
+  noiseSource.connect(filter); filter.connect(spatialGain);
+  noiseSource.start(0); noiseSource.stop(duration);
+
+  if (d.phiScore > 0.6) {
+    const phiOsc = offlineCtx.createOscillator();
+    const phiGain = offlineCtx.createGain();
+    phiOsc.frequency.value = 528; phiOsc.type = 'sine';
+    phiGain.gain.value = 0.08 * d.phiScore;
+    phiOsc.connect(phiGain); phiGain.connect(masterGain);
+    phiOsc.start(0); phiOsc.stop(duration);
+  }
+
+  try {
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'sonificacion-visual.wav';
+    a.click();
+    URL.revokeObjectURL(url);
+    log('WAV exportado correctamente.', 'highlight');
+  } catch(e) {
+    log('Error al exportar: ' + e.message);
+  }
+
+  exportInProgress = false;
+  exportBtn.textContent = '⬇ EXPORTAR WAV';
+  exportBtn.disabled = false;
+}
+
+function bufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const numSamples = buffer.length;
+  const bitsPerSample = 16;
+  const byteRate = sampleRate * numCh * bitsPerSample / 8;
+  const blockAlign = numCh * bitsPerSample / 8;
+  const dataSize = numSamples * numCh * bitsPerSample / 8;
+  const bufSize = 44 + dataSize;
+  const arrayBuf = new ArrayBuffer(bufSize);
+  const view = new DataView(arrayBuf);
+
+  function writeStr(offset, str) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
+  writeStr(0, 'RIFF');
+  view.setUint32(4, bufSize - 8, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  for (let i = 0; i < numSamples; i++) {
+    for (let c = 0; c < numCh; c++) {
+      const sample = Math.max(-1, Math.min(1, buffer.getChannelData(c)[i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return new Blob([arrayBuf], { type: 'audio/wav' });
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+
+playBtn.addEventListener('click', () => {
+  if (isPlaying) { stopPlayback(); return; }
+  startPlayback();
+});
+
+stopBtn.addEventListener('click', stopPlayback);
+exportBtn.addEventListener('click', exportWav);
+
+// Resize canvas
+window.addEventListener('resize', () => {
+  if (analysisData) drawSpatialSpectrum(analysisData.spatialFreqs);
+});
+</script>
+</body>
+</html>
